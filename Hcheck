@@ -1,0 +1,82 @@
+from selenium import webdriver
+import time
+from datetime import date
+from selenium.webdriver.common.keys import Keys 
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+import schedule
+chrome_options = webdriver.ChromeOptions()
+
+chrome_options.add_argument('--window-size=1920,1080')  
+chrome_options.add_argument('--headless')
+driver = webdriver.Chrome(r"C:\Users\y\Downloads\chromedriver_win32 (2)\chromedriver.exe", chrome_options=chrome_options)
+# driver = webdriver.Chrome(r"C:\Users\y\Downloads\chromedriver_win32 (1)\chromedriver.exe")
+namelist = ['서휘원', '']
+codelist = ['W4BE49']
+endlist = []
+name = 0
+def add_list():
+    while True:
+        name = input("이름을 입력하세요(0 To Exit):")
+        if name == '0':
+            break
+        code = input("코드를 입력하세요:")
+        namelist.append(name)
+        codelist.append(code)
+    for a in range(0, len(namelist)):
+        f = open('text.txt', 'a', encoding='utf-8')
+        f.write(namelist[a])
+        f.write('\n')
+        f.write(codelist[a])
+        f.write('\n')
+    f.close()
+
+
+def hcheck():
+    driver.get("https://eduro.goe.go.kr/stv_cvd_co00_010.do")
+    driver.implicitly_wait(300)
+
+    driver.find_element_by_xpath('//*[@id="pName"]').send_keys(namelist[i])
+    driver.find_element_by_xpath('//*[@id="qstnCrtfcNo"]').send_keys(codelist[i])
+    driver.find_element_by_xpath('//*[@id="btnConfirm"]').click()
+    today = str(date.today())
+    f = open('checklist.txt', 'a', encoding='utf-8')
+    f.write(today)
+    f.write(':')
+    try:
+        WebDriverWait(driver, 3).until(EC.alert_is_present(),'Timed out waiting for PA creation ' +'confirmation popup to appear.')
+        alert = driver.switch_to.alert
+        alert.accept()
+        f.write(namelist[i])
+        f.write(':실패\n')
+        return
+    except TimeoutException:
+        pass
+
+    driver.find_element_by_xpath('//*[@id="rspns011"]').click()
+    driver.find_element_by_xpath('//*[@id="rspns02"]').click()
+    driver.find_element_by_xpath('//*[@id="rspns070"]').click()
+    driver.find_element_by_xpath('//*[@id="rspns080"]').click()
+    driver.find_element_by_xpath('//*[@id="rspns090"]').click()
+    driver.find_element_by_xpath('//*[@id="btnConfirm"]').click()
+    n = driver.find_element_by_xpath('//*[@id="container"]/div/div/div/div[3]/p').text
+    name = n[0:3]
+    if namelist[i] == name:        
+        f.write(name)
+        f.write(':완료\n')
+    else:
+        print(n)
+        f.write(namelist[i])
+        f.write(':실패\n')
+# add_list()
+def hcheck_all():
+    global i
+    for i in range(0, len(namelist)):
+        hcheck()
+schedule.every().day.at("01:30").do(hcheck_all)
+while True:
+    schedule.run_pending()
+    time.sleep(60) # wait one minute
+
+# https://stackoverflow.com/questions/15088037/python-script-to-do-something-at-the-same-time-every-day
